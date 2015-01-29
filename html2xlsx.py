@@ -29,6 +29,8 @@ HTML_FILENAME = None
 BASENAME = None
 HTML_REGEX = None
 
+TEST_NAME_PREFIX = "TRACE LOG FOR "
+
 STATUS_STRINGS = ['PASS', 'FAIL', 'ERROR']
 
 
@@ -40,11 +42,12 @@ def clear_test_name(test_name):
         spaces and leading single quotes.
     """
 
-    single_quotes_index = test_name.rfind("'")
     cleaned_str = test_name
 
-    if single_quotes_index:
-        cleaned_str = cleaned_str[single_quotes_index + 1:]
+    # single_quotes_index = test_name.rfind("'")
+
+    # if single_quotes_index:
+    #     cleaned_str = cleaned_str[single_quotes_index + 1:]
 
     return cleaned_str.strip()
 
@@ -90,6 +93,36 @@ def scan_folder_for_html_files(folder, results):
                 scan_folder_for_html_files(pathname, results)
 
 
+def extract_test_name_from_log(log_file):
+
+    """
+        Extracts the name of a test from the log file
+        specific for that test.
+    """
+
+    try:
+
+        if os.path.getsize(log_file) > 0:
+
+            with open(log_file) as file_handler:
+
+                # the first line of the log holds the test name
+                for line in file_handler:
+
+                    prefix_index = line.find(TEST_NAME_PREFIX)
+
+                    if prefix_index == 0:
+
+                        return line[len(TEST_NAME_PREFIX):]
+
+                # the test name could not be found
+                return None
+
+    except OSError:
+
+        return None
+
+
 def extract_info_from_html(html_file, results):
 
     """
@@ -121,9 +154,21 @@ def extract_info_from_html(html_file, results):
 
                     else:
 
-                        tests_names.append(clear_test_name(elem.text_content()))
+                        parent_dir = os.path.dirname(html_file)
+                        link = os.path.join(parent_dir, elem.get("href"))
 
-                        exec_times.append(elem.tail.strip())
+                        log("Getting the test name from file {0}".format(link))
+
+                        test_real_name = extract_test_name_from_log(link)
+
+                        if test_real_name:
+
+                            log("Test name retrieved: {0}".format(
+                                test_real_name))
+
+                            tests_names.append(clear_test_name(test_real_name))
+
+                            exec_times.append(elem.tail.strip())
 
         if tests_names and tests_status and exec_times:
 
