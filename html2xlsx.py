@@ -30,6 +30,7 @@ BASENAME = None
 HTML_REGEX = None
 
 TEST_NAME_PREFIX = "TRACE LOG FOR "
+TEST_FILE_REGEX = re.compile(r'(?P<test_file>[\w\-.]+\.py)')
 
 STATUS_STRINGS = ['PASS', 'FAIL', 'ERROR']
 
@@ -93,10 +94,10 @@ def scan_folder_for_html_files(folder, results):
                 scan_folder_for_html_files(pathname, results)
 
 
-def extract_test_name_from_log(log_file):
+def extract_info_from_log(log_file):
 
     """
-        Extracts the name of a test from the log file
+        Extracts the name and origin file of a test from the log file
         specific for that test.
     """
 
@@ -106,17 +107,56 @@ def extract_test_name_from_log(log_file):
 
             with open(log_file) as file_handler:
 
+                test_file = None
+                test_name = None
+
                 # the first line of the log holds the test name
                 for line in file_handler:
 
-                    prefix_index = line.find(TEST_NAME_PREFIX)
+                    if test_name and test_file:
 
-                    if prefix_index == 0:
+                        break
 
-                        return line[len(TEST_NAME_PREFIX):]
+                    # if test_name is still missing
+                    if not test_name:
 
-                # the test name could not be found
-                return None
+                        prefix_index = line.find(TEST_NAME_PREFIX)
+
+                        if prefix_index == 0:
+
+                            test_name = line[len(TEST_NAME_PREFIX):]
+
+                            continue
+
+                    # if test_file is still missing
+                    if not test_file:
+
+                        match = TEST_FILE_REGEX.search(line)
+
+                        if match:
+
+                            test_file = match.groupdict()["test_file"]
+
+                            continue
+
+                # finding out what will be returned
+                if test_file and test_name:
+
+                    return (test_name, test_file)
+
+                else:
+
+                    if test_name:
+
+                        return (test_name, None)
+
+                    elif test_file:
+
+                        return (None, test_file)
+
+                    else:
+
+                        return None
 
     except OSError:
 
@@ -139,6 +179,7 @@ def extract_info_from_html(html_file, results):
         tests_names = []
         tests_status = []
         exec_times = []
+        tests_files = []
 
         for elem in html_tree.iter():
 
@@ -159,20 +200,29 @@ def extract_info_from_html(html_file, results):
 
                         log("Getting the test name from file {0}".format(link))
 
-                        test_real_name = extract_test_name_from_log(link)
+                        test_info = extract_info_from_log(link)
 
-                        if test_real_name:
+                        if test_info:
+
+                            test_real_name, test_file = test_info
 
                             log("Test name retrieved: {0}".format(
                                 test_real_name))
 
+                            log("Test file name retrieved: {0}".format(
+                                test_file))
+
                             tests_names.append(clear_test_name(test_real_name))
 
-                            exec_times.append(elem.tail.strip())
+                            tests_files.append(test_file)
+
+                        exec_times.append(elem.tail.strip())
 
         if tests_names and tests_status and exec_times:
 
-            file_results = dict(zip(tests_names, zip(tests_status, exec_times)))
+            file_results = dict(zip(tests_names,
+                                    zip(tests_status, exec_times, tests_files)
+                                    ))
 
             results[os.path.abspath(html_file)] = file_results
 
@@ -421,6 +471,7 @@ if __name__ == "__main__":
         sheet.append(["Test Name",
                       "Run Status",
                       "Execution Time",
+                      "Test File",
                       "Latest Run",
                       "Extracted from"
                       "",
@@ -439,7 +490,8 @@ if __name__ == "__main__":
             str_run_origin = latest_test_run[test_name][1]
 
             sheet.append([test_name, info[0],
-                         info[1], str_run_datetime, str_run_origin])
+                         info[1], info[2],
+                         str_run_datetime, str_run_origin])
 
     else:
 
@@ -467,6 +519,7 @@ if __name__ == "__main__":
             sheet.append(["Test Name",
                           "Run Status",
                           "Execution Time",
+                          "Test File",
                           "",
                           "Pass Rate:",
                           calculate_pass_rate(extracted),
@@ -477,7 +530,8 @@ if __name__ == "__main__":
 
             for test_name, result in extracted.items():
 
-                sheet.append([test_name, result[0], float(result[1])])
+                sheet.append([test_name, result[0],
+                             float(result[1]), result[2]])
 
     time_info = datetime.datetime.now().strftime("%Y%m%d %H%M")
 
