@@ -8,7 +8,7 @@ if [ -n "$VIRTUAL_ENV" ]; then
 	pip install -r requirements.txt
 
 else
-	echo "Not using a virtual environment; install setuptools and pip system-wide"
+	echo "Not using a virtual environment: install setuptools and pip system-wide"
 
 	sudo apt-get install python-setuptools
 
