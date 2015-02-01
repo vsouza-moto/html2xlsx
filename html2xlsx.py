@@ -43,14 +43,29 @@ def clear_test_name(test_name):
         spaces and leading single quotes.
     """
 
-    cleaned_str = test_name
+    # if test_name:
 
-    # single_quotes_index = test_name.rfind("'")
+    #     can_open_sq = False
+    #     can_close_sq = False
 
-    # if single_quotes_index:
-    #     cleaned_str = cleaned_str[single_quotes_index + 1:]
+    #     def accept_char(char):
 
-    return cleaned_str.strip()
+    #         pass
+
+    #     allowed_chars = [char for char in test_name.strip() if accept_char(char)]
+
+    #     # one single quote was left unclosed, remove the 
+    #     if can_close_sq:
+
+    #         allowed_chars = allowed_chars[:-1]
+
+    #     return "".join(allowed_chars)
+    
+    # else:
+
+    #     return test_name
+
+    return test_name.strip()
 
 
 def log(message, force=False):
@@ -218,7 +233,7 @@ def extract_info_from_html(html_file, results):
 
                         exec_times.append(elem.tail.strip())
 
-        if tests_names and tests_status and exec_times:
+        if tests_names and tests_status and exec_times and tests_files:
 
             file_results = dict(zip(tests_names,
                                     zip(tests_status, exec_times, tests_files)
@@ -473,14 +488,16 @@ if __name__ == "__main__":
                       "Execution Time",
                       "Test File",
                       "Latest Run",
-                      "Extracted from"
+                      "Extracted from",
                       "",
                       "Pass Rate:",
                       calculate_pass_rate(extracted),
                       "Total Execution Time:",
                       calculate_total_exec_time(extracted)])
 
-        for test_name, info in extracted.items():
+        extracted_items = sorted(extracted.items())
+
+        for test_name, info in extracted_items:
 
             run_datetime = datetime.datetime.fromtimestamp(
                 latest_test_run[test_name][0])
@@ -490,7 +507,7 @@ if __name__ == "__main__":
             str_run_origin = latest_test_run[test_name][1]
 
             sheet.append([test_name, info[0],
-                         info[1], info[2],
+                         float(info[1]), info[2],
                          str_run_datetime, str_run_origin])
 
     else:
@@ -528,7 +545,9 @@ if __name__ == "__main__":
                           "Extracted from:",
                           origin])
 
-            for test_name, result in extracted.items():
+            extracted_items = sorted(extracted.items())
+
+            for test_name, result in extracted_items:
 
                 sheet.append([test_name, result[0],
                              float(result[1]), result[2]])
