@@ -17,7 +17,7 @@ import sys
 import logging
 
 from extract import Extractor
-
+from export import Exporter
 
 if __name__ == "__main__":
 
@@ -92,8 +92,6 @@ if __name__ == "__main__":
         # set logging level to 'INFO'
         logging.getLogger().setLevel(20)
 
-    consolidate = args.consolidate
-
     xml_regex = r".*\.xml"
 
     if args.xml_filename:
@@ -101,8 +99,6 @@ if __name__ == "__main__":
         xml_regex = r"{0}\.xml".format(args.xml_filename)
 
     xml_regex = re.compile(xml_regex)
-
-    basename = args.basename
 
     if os.path.exists(output_folder):
 
@@ -148,6 +144,12 @@ if __name__ == "__main__":
 
     else:
 
-        from pprint import pprint
+        exporter = Exporter(basename=args.basename, output_folder=output_folder)
 
-        pprint(extracted_info)
+        if args.consolidate:
+
+            exporter.export_to_xlsx_consolidated(extracted_info)
+
+        else:
+
+            exporter.export_to_xlsx(extracted_info)

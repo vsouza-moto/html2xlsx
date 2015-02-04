@@ -131,7 +131,7 @@ class Extractor(object):
             info["names"].append("")
 
         try:
-            
+
             # the test description
             info["descriptions"].append(testcase.get("description"))
 
@@ -146,7 +146,7 @@ class Extractor(object):
 
         except AttributeError:
 
-            info["statuses"].append("")            
+            info["statuses"].append("")
 
         try:
 
