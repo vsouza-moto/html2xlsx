@@ -16,3 +16,15 @@ else
 
 	sudo pip install -r requirements.txt
 fi
+
+# create a link in the user bin directory
+INSTALL_DIR=`pwd`
+
+mkdir -p $HOME/bin
+
+cd $HOME/bin
+
+ln -s "$INSTALL_DIR/html2xlsx.py" html2xlsx
+
+cd "$INSTALL_DIR"
+
