@@ -151,7 +151,7 @@ class Extractor(object):
         try:
 
             # the test execution time
-            info["times"].append(testcase.get("time"))
+            info["times"].append(float(testcase.get("time")))
 
         except AttributeError:
 

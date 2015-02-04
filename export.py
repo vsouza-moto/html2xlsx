@@ -155,4 +155,57 @@ class Exporter(object):
 
             spreadsheet_name = "Test Round (consolidated)"
 
-        pass
+        # consolidate the results
+        extracted, latest_test_run = self.consolidate(info)
+
+        # write the final data to the worksheet
+        logging.info("Creating worksheet for the consolidated results...")
+
+        sheet = workbook.create_sheet()
+
+        sheet.title = "Run"
+
+        sheet.append(["Test Name",
+                      "Test Suite",
+                      "File",
+                      "Function",
+                      "Description",
+                      "Status",
+                      "Exec Time",
+                      "Latest Run",
+                      "Extracted From",
+                      "--",
+                      "Pass Rate:",
+                      utils.calculate_pass_rate(extracted),
+                      "Total Execution Time:",
+                      utils.calculate_total_exec_time(extracted)])
+
+        extracted_items = sorted(extracted.items())
+
+        for test_name, info in extracted_items:
+
+            run_datetime = datetime.datetime.fromtimestamp(
+                latest_test_run[test_name][0])
+
+            str_run_datetime = run_datetime.strftime("%m/%d/%Y %H:%M:%S")
+
+            str_run_origin = latest_test_run[test_name][1]
+
+            info_list = [test_name]
+            info_list.extend(info)
+            info_list.extend([str_run_datetime, str_run_origin])
+
+            sheet.append(info_list)
+
+        time_info = datetime.datetime.now().strftime("%Y%m%d %H%M")
+
+        filename = "{0} {1}.xlsx".format(spreadsheet_name, time_info)
+
+        filename = os.path.join(self.output_folder, filename)
+
+        logging.info("Saving the '{0}' spreadsheet at the '{1}' folder \
+            ...".format( spreadsheet_name, self.output_folder))
+
+        workbook.save(filename)
+
+        logging.info("Spreadsheet file saved")
